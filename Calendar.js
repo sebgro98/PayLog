@@ -1,7 +1,8 @@
 import React, {useEffect, useState} from 'react';
-import {View, Text, Switch, StyleSheet, TouchableOpacity, TextInput, Button, Modal} from 'react-native';
+import {View, Text, StyleSheet, TouchableOpacity, TextInput, Button, Modal} from 'react-native';
 import Model from "./Model.js"
-const CalendarComponent = () => {
+
+const CalendarComponent = (  {navigation }) => {
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const [calendarData, setCalendarData] = useState([]);
     const [monthName, setMonthName] = useState(() => currentMonth.toLocaleString('default', {month: 'long'}));
@@ -18,11 +19,11 @@ const CalendarComponent = () => {
     const [isPopupVisible, setIsPopupVisible] = useState(false);
     const [payment, setPayment] = useState('');
     const [customer, setCustomer] = useState('');
+    const [notes, setNotes] = useState('');
 
 
     const navigateMonth = (direction) => {
         const newMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + direction, 1);
-        console.log(newMonth)
         setCurrentMonth(newMonth);
     };
 
@@ -36,14 +37,21 @@ const CalendarComponent = () => {
         setIsLoading(false); // Set loading to false after the calendar data has been generated
     }, [currentMonth]);
 
+    useEffect(() => {
+        const fetchUserLoginState = async () => {
+            const isLoggedIn = await model.getUser();
+            setLoggedIn(isLoggedIn);
+        };
 
+        fetchUserLoginState()
+    }, []);
     const handleLogin = async () => {
         try {
             await model.logIn(email, password);
             setLoggedIn(true);
         } catch (error) {
             console.error(error);
-            // here you could show an error message to the user
+
         }
     };
 
@@ -53,7 +61,7 @@ const CalendarComponent = () => {
             setLoggedIn(false);
         } catch (error) {
             console.error(error);
-            // here you could show an error message to the user
+
         }
     };
 
@@ -72,7 +80,9 @@ const CalendarComponent = () => {
         setSelectedDate(dateInfo.date);
         setIsPopupVisible(true);
     };
-
+    const navigateToMonthlyDetails = () => {
+        navigation.navigate('MonthlyDetails', { currentMonth });
+    };
 
     const renderGrid = () => {
         const DAYS_OF_WEEK = ["Mon", "Tues", "Wedne", "Thurs", "Fri", "Satur", "Sun"];
@@ -118,6 +128,7 @@ const CalendarComponent = () => {
                 <TouchableOpacity onPress={() => navigateMonth(1)}>
                     <Text style={styles.arrowText}>{'>'}</Text>
                 </TouchableOpacity>
+                <Button title="Go to Monthly Details" onPress={navigateToMonthlyDetails} />
             </View>
 
             {isLoading ? <Text>Loading...</Text> : <View style={styles.gridContainer}>{renderGrid()}</View>}
@@ -157,19 +168,29 @@ const CalendarComponent = () => {
                                 value={customer}
                                 onChangeText={setCustomer}
                             />
+                            <TextInput
+                                placeholder="Notes"
+                                value={notes}
+                                onChangeText={setNotes}
+                            />
                             <Button title="Submit" onPress={async () => {
                                 setIsPopupVisible(false);
                                 const model = new Model();
-                                await model.addPayments(selectedDate, payment, customer);
+                                await model.addPayments(selectedDate, payment, customer, notes);
                                 setPayment('');
                                 setCustomer('');
+                                setNotes('');
                             }}/>
                             <Button title="Close" onPress={() => setIsPopupVisible(false)}/>
                         </View>
                     </View>
                 </Modal>
             )}
+
+
+
         </View>
+
     );
 }
 
@@ -310,7 +331,8 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.25,
         shadowRadius: 4,
         elevation: 5
-    }
+    },
+
 });
 
 

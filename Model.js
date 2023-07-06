@@ -1,6 +1,6 @@
-import { createUserWithEmailAndPassword, getAuth, signInWithEmailAndPassword, setPersistence, browserLocalPersistence } from "firebase/auth";
+import {  onAuthStateChanged ,createUserWithEmailAndPassword, getAuth, signInWithEmailAndPassword, setPersistence, browserLocalPersistence } from "firebase/auth";
 import { db } from "./firebaseModel";
-import { collection, doc, getDoc, getDocs, setDoc, serverTimestamp, addDoc, updateDoc, orderBy, query } from "firebase/firestore";
+import { collection, doc, getDocs, setDoc, addDoc,} from "firebase/firestore";
 
 class Model {
     constructor() {
@@ -22,6 +22,49 @@ class Model {
         } catch (error) {
             throw error;
         }
+    }
+
+    async  getAllPayments() {
+        try {
+            const auth = getAuth();
+            const user = auth.currentUser;
+
+            if (user) {
+                const paymentsCollectionRef = collection(db, 'Payment');
+                const paymentsSnapshot = await getDocs(paymentsCollectionRef);
+                const allPayments = [];
+
+                for (const dateDoc of paymentsSnapshot.docs) {
+                    const date = dateDoc.id;
+                    const datePaymentsCollectionRef = collection(dateDoc.ref, 'fields');
+                    const datePaymentsSnapshot = await getDocs(datePaymentsCollectionRef);
+
+                    const datePayments = datePaymentsSnapshot.docs.map(doc => ({ date, id: doc.id, ...doc.data() }));
+
+                    allPayments.push(...datePayments);
+                }
+
+                const orderedPayments = allPayments.sort((a, b) => a.date.localeCompare(b.date));
+                console.log(orderedPayments);
+                return orderedPayments;
+            } else {
+                console.log('No user found');
+                return [];
+            }
+        } catch (error) {
+            console.error(error);
+            throw error;
+        }
+    }
+    async getUser() {
+        return new Promise((resolve, reject) => {
+            const auth = getAuth();
+            onAuthStateChanged(auth, (user) => {
+                resolve(user);
+            }, (error) => {
+                reject(error);
+            });
+        });
     }
 
     async logIn(email, password) {
@@ -54,7 +97,7 @@ class Model {
         return adjustedDate.toISOString().split('T')[0];
     }
 
-    async  addPayments(selectedDate, amountPayed, Customer) {
+    async  addPayments(selectedDate, amountPayed, Customer, notes) {
         const auth = getAuth();
         const user = auth.currentUser;
         if (!user) {
@@ -67,12 +110,21 @@ class Model {
 
         const userPaymentsRef = collection(db, 'Payments', user.email, dateString);
 
-        // Add a new document with a server-generated ID
-        const newPaymentRef = doc(userPaymentsRef);
-        await setDoc(newPaymentRef, { payment: amountPayed, customer: Customer });
+        const userPostsCollectionSnapshot = await getDocs(userPaymentsRef);
+        if (userPostsCollectionSnapshot.empty) {
+            await setDoc(userPaymentsRef.parent, {[userPaymentsRef.id]: {}});
+        }
+
+        await addDoc(userPaymentsRef, {
+            payment: amountPayed,
+            customer: Customer,
+            notes: notes,
+
+        });
     }
 
-    async logout() {
+
+        async logout() {
         const auth = getAuth();
         try {
             console.log(this.currentLoggedInUser);
