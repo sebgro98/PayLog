@@ -134,25 +134,40 @@ const CalendarComponent = (  {navigation }) => {
 
             {isLoading ? <Text>Loading...</Text> : <View style={styles.gridContainer}>{renderGrid()}</View>}
 
-            {!loggedIn ? (
-                <View>
-                    <TextInput
-                        placeholder="Email"
-                        value={email}
-                        onChangeText={setEmail}
-                    />
-                    <TextInput
-                        placeholder="Password"
-                        secureTextEntry={true}
-                        value={password}
-                        onChangeText={setPassword}
-                    />
-                    <Button title="Log In" onPress={handleLogin}/>
-                    {!registrationSuccessful && <Button title="Register" onPress={handleRegistration}/>}
-                </View>
-            ) : (
-                <Button title="Log Out" onPress={handleLogout}/>
-            )}
+            <View style={styles.container_button}>
+                {!loggedIn ? (
+                    <View style={styles.formContainer}>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Email"
+                            value={email}
+                            onChangeText={setEmail}
+                            placeholderTextColor="#aaaaaa"
+                        />
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Password"
+                            secureTextEntry={true}
+                            value={password}
+                            onChangeText={setPassword}
+                            placeholderTextColor="#aaaaaa"
+                        />
+                        <View style={styles.buttonContainer}>
+                            <Button title="Log In" onPress={handleLogin} color="#409EFF" />
+                            {!registrationSuccessful && (
+                                <Button
+                                    title="Register"
+                                    onPress={handleRegistration}
+                                    color="#67C23A"
+                                />
+                            )}
+                        </View>
+                    </View>
+                ) : (
+                    <Button title="Log Out" onPress={handleLogout} color="#F56C6C" />
+                )}
+
+            </View>
 
             {isPopupVisible && (
                 <Modal visible={isPopupVisible} onDismiss={() => setIsPopupVisible(false)}>
@@ -194,7 +209,7 @@ const CalendarComponent = (  {navigation }) => {
                                 style={styles.button}
                                 contentStyle={styles.buttonContent}
                                 labelStyle={styles.buttonLabel}
-                             title={'Submit'}>
+                                title={'Submit'}>
 
                             </Button>
                             <Button
@@ -202,7 +217,7 @@ const CalendarComponent = (  {navigation }) => {
                                 onPress={() => setIsPopupVisible(false)}
                                 style={styles.button}
                                 labelStyle={styles.buttonLabel}
-                             title={'Close'}>
+                                title={'Close'}>
 
                             </Button>
                         </View>
@@ -370,6 +385,38 @@ const styles = StyleSheet.create({
     buttonLabel: {
         fontSize: 16,
         fontWeight: 'bold',
+    },
+    container_button: {
+        flex: 1,
+        backgroundColor: '#F2F5F8',
+    },
+    formContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 20,
+    },
+    input: {
+        height: 40,
+        width: '100%',
+        borderColor: '#D3DCE6',
+        borderWidth: 1,
+        borderRadius: 5,
+        marginBottom: 10,
+        padding: 10,
+        backgroundColor: '#FFF',
+        fontSize: 16,
+    },
+    buttonContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        width: '100%',
+        marginTop: 20,
+    },
+    calendarContainer: {
+        flex: 1,
+        alignItems: 'flex-end',
+        justifyContent: 'flex-start',
+        padding: 20,
     },
 });
 
