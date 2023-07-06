@@ -1,6 +1,6 @@
 import {  onAuthStateChanged ,createUserWithEmailAndPassword, getAuth, signInWithEmailAndPassword, setPersistence, browserLocalPersistence } from "firebase/auth";
 import { db } from "./firebaseModel";
-import { collection, doc, getDocs, setDoc, addDoc,} from "firebase/firestore";
+import { collection, doc, getDocs, setDoc, addDoc,query, updateDoc} from "firebase/firestore";
 
 class Model {
     constructor() {
@@ -24,38 +24,59 @@ class Model {
         }
     }
 
-    async  getAllPayments() {
+
+    async  updatePayment(date, updatedData) {
+
         try {
             const auth = getAuth();
             const user = auth.currentUser;
-
-            if (user) {
-                const paymentsCollectionRef = collection(db, 'Payment');
-                const paymentsSnapshot = await getDocs(paymentsCollectionRef);
-                const allPayments = [];
-
-                for (const dateDoc of paymentsSnapshot.docs) {
-                    const date = dateDoc.id;
-                    const datePaymentsCollectionRef = collection(dateDoc.ref, 'fields');
-                    const datePaymentsSnapshot = await getDocs(datePaymentsCollectionRef);
-
-                    const datePayments = datePaymentsSnapshot.docs.map(doc => ({ date, id: doc.id, ...doc.data() }));
-
-                    allPayments.push(...datePayments);
-                }
-
-                const orderedPayments = allPayments.sort((a, b) => a.date.localeCompare(b.date));
-                console.log(orderedPayments);
-                return orderedPayments;
-            } else {
-                console.log('No user found');
-                return [];
-            }
+            const paymentDocRef = doc(db, 'Payments', user.email, date.date, date.id);
+            await updateDoc(paymentDocRef, updatedData);
+            console.log(`Successfully updated payment for date: ${date}`);
         } catch (error) {
-            console.error(error);
+            console.error(`Error updating payment for date: ${date}`, error);
             throw error;
         }
     }
+
+    async  getAllPayments(yearMonth) {
+        const auth = getAuth();
+        const user = auth.currentUser;
+        console.log("wtf",yearMonth)
+
+        if (user) {
+            console.log(`Fetching payments for user: ${user.email}`);
+
+            yearMonth = this.toLocalISOString(yearMonth);
+            console.log("yearmonth",yearMonth)
+
+            const allPayments = [];
+            const [year, month, day] = yearMonth.split('-').map(Number);
+            const daysInMonth = new Date(year, month, 0).getDate();
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                // Create the dateString in 'YYYY-MM-DD' format
+                const dateString = `${year}-${month < 10 ? '0' + month : month}-${day < 10 ? '0' + day : day}`;
+                console.log(`Fetching payments for date: ${dateString}`);
+
+                const dayCollectionRef = collection(db, 'Payments', user.email, dateString);
+                const daySnapshot = await getDocs(dayCollectionRef);
+
+                console.log(`Found ${daySnapshot.docs.length} payments for date: ${dateString}`);
+
+                const dayPayments = daySnapshot.docs.map(doc => ({id: doc.id, date: dateString, ...doc.data()}));
+                allPayments.push(...dayPayments);
+            }
+
+            console.log(`Found a total of ${allPayments.length} payments for the month`);
+            return allPayments;
+        } else {
+            console.error('No user found');
+            return [];
+        }
+    }
+
+
     async getUser() {
         return new Promise((resolve, reject) => {
             const auth = getAuth();

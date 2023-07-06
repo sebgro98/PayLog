@@ -25,6 +25,7 @@ const CalendarComponent = (  {navigation }) => {
     const navigateMonth = (direction) => {
         const newMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + direction, 1);
         setCurrentMonth(newMonth);
+        console.log("this",currentMonth)
     };
 
     useEffect(() => {
@@ -154,34 +155,56 @@ const CalendarComponent = (  {navigation }) => {
             )}
 
             {isPopupVisible && (
-                <Modal animationType="slide" transparent={true} visible={isPopupVisible}>
+                <Modal visible={isPopupVisible} onDismiss={() => setIsPopupVisible(false)}>
                     <View style={styles.centeredView}>
                         <View style={styles.modalView}>
-                            <Text>Enter Payment and Customer details</Text>
+                            <Text style={styles.modalText}>
+                                Enter Payment and Customer details for{' '}
+                                {selectedDate.toLocaleDateString('en-GB')}
+                            </Text>
                             <TextInput
-                                placeholder="Payment"
+                                placeholder={"Payment"}
+
                                 value={payment}
                                 onChangeText={setPayment}
+                                style={styles.textInput}
                             />
                             <TextInput
-                                placeholder="Customer"
+                                placeholder={"Customer"}
                                 value={customer}
                                 onChangeText={setCustomer}
+                                style={styles.textInput}
                             />
                             <TextInput
-                                placeholder="Notes"
+                                placeholder={"notes"}
                                 value={notes}
                                 onChangeText={setNotes}
+                                style={styles.textInput}
                             />
-                            <Button title="Submit" onPress={async () => {
-                                setIsPopupVisible(false);
-                                const model = new Model();
-                                await model.addPayments(selectedDate, payment, customer, notes);
-                                setPayment('');
-                                setCustomer('');
-                                setNotes('');
-                            }}/>
-                            <Button title="Close" onPress={() => setIsPopupVisible(false)}/>
+                            <Button
+                                mode="contained"
+                                onPress={async () => {
+                                    setIsPopupVisible(false);
+                                    const model = new Model();
+                                    await model.addPayments(selectedDate, payment, customer, notes);
+                                    setPayment('');
+                                    setCustomer('');
+                                    setNotes('');
+                                }}
+                                style={styles.button}
+                                contentStyle={styles.buttonContent}
+                                labelStyle={styles.buttonLabel}
+                             title={'Submit'}>
+
+                            </Button>
+                            <Button
+                                mode="text"
+                                onPress={() => setIsPopupVisible(false)}
+                                style={styles.button}
+                                labelStyle={styles.buttonLabel}
+                             title={'Close'}>
+
+                            </Button>
                         </View>
                     </View>
                 </Modal>
@@ -235,13 +258,6 @@ const generateCalendarData = (month) => {
 
     return calendarData;
 };
-// Function to handle date press
-
-
-
-
-
-
 
 
 const styles = StyleSheet.create({
@@ -313,26 +329,48 @@ const styles = StyleSheet.create({
 
     centeredView: {
         flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        marginTop: 22
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
     },
     modalView: {
-        margin: 20,
-        backgroundColor: "white",
-        borderRadius: 20,
-        padding: 35,
-        alignItems: "center",
-        shadowColor: "#000",
-        shadowOffset: {
-            width: 0,
-            height: 2
-        },
-        shadowOpacity: 0.25,
-        shadowRadius: 4,
-        elevation: 5
+        backgroundColor: 'white',
+        borderRadius: 8,
+        padding: 16,
+        width: '80%',
+        maxWidth: 400,
     },
-
+    modalContent: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalText: {
+        fontSize: 16,
+        marginBottom: 16,
+    },
+    textInput: {
+        marginBottom: 16,
+        width: '100%',
+        backgroundColor: '#F6F6F6',
+        borderWidth: 1,
+        borderColor: '#DDDDDD',
+        borderRadius: 4,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        fontSize: 16,
+    },
+    button: {
+        marginTop: 8,
+        width: '100%',
+    },
+    buttonContent: {
+        height: 48,
+    },
+    buttonLabel: {
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
 });
 
 
