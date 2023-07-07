@@ -33,7 +33,7 @@ class Model {
             const user = auth.currentUser;
             const paymentDocRef = doc(db, 'Payments', user.email, date.date, date.id);
             await updateDoc(paymentDocRef, updatedData);
-            console.log(`Successfully updated payment for date: ${date}`);
+            toast(`Successfully updated payment for date: ${date}`);
         } catch (error) {
             console.error(`Error updating payment for date: ${date}`, error);
             throw error;
