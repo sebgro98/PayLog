@@ -1,6 +1,7 @@
 node_modules/
 .expo/
 dist/
+firebaseConfig.js
 npm-debug.*
 *.jks
 *.p8
@@ -8,6 +9,7 @@ npm-debug.*
 *.key
 *.mobileprovision
 *.orig.*
+*.json
 web-build/
 
 # macOS
