@@ -1,7 +1,7 @@
 import {  onAuthStateChanged ,createUserWithEmailAndPassword, getAuth, signInWithEmailAndPassword, setPersistence, browserLocalPersistence } from "firebase/auth";
 import { db } from "./firebaseModel";
-import { collection, doc, getDocs, setDoc, addDoc,query, updateDoc} from "firebase/firestore";
-
+import { collection, doc, getDocs, setDoc, addDoc,query, updateDoc, deleteDoc} from "firebase/firestore";
+import { toast } from 'react-toastify';
 class Model {
     constructor() {
         this.currentUserUID = null;
@@ -20,6 +20,7 @@ class Model {
                 password: password,
             });
         } catch (error) {
+            toast.error(error.message)
             throw error;
         }
     }
@@ -44,7 +45,7 @@ class Model {
         const user = auth.currentUser;
         console.log("wtf",yearMonth)
 
-        if (user) {
+        try  {
             console.log(`Fetching payments for user: ${user.email}`);
 
             yearMonth = this.toLocalISOString(yearMonth);
@@ -70,8 +71,8 @@ class Model {
 
             console.log(`Found a total of ${allPayments.length} payments for the month`);
             return allPayments;
-        } else {
-            console.error('No user found');
+        } catch (error) {
+            toast.error('No user found');
             return [];
         }
     }
@@ -101,14 +102,31 @@ class Model {
         } catch (error) {
             switch (error.code) {
                 case "auth/invalid-email":
-                    throw new Error("Invalid email!");
+                    toast.error("Invalid email!")
+                    throw(error)
                 case "auth/user-not-found":
-                    throw new Error("Account does not exist!");
+                    toast.error("Account does not exist!")
+                    throw(error)
                 case "auth/wrong-password":
-                    throw new Error("Invalid password!");
+                    toast.error("Invalid password!")
+                    throw(error)
                 default:
-                    throw new Error("Email or password invalid!");
+                    toast.error("Email or password invalid!")
+                    throw(error)
             }
+        }
+    }
+
+    async deletePayment(payment) {
+        const auth = getAuth();
+        const user = auth.currentUser;
+
+        try {
+            const docRef = doc(db, 'Payments', user.email, payment.date, payment.id);
+            await deleteDoc(docRef);
+            console.log(`Deleted payment ${payment.id}`);
+        } catch (error) {
+            toast.error(error)
         }
     }
 
@@ -119,31 +137,32 @@ class Model {
     }
 
     async  addPayments(selectedDate, amountPayed, Customer, notes) {
-        const auth = getAuth();
-        const user = auth.currentUser;
-        if (!user) {
-            throw new Error('User must be signed in to create a post.');
+        try {
+            const auth = getAuth();
+            const user = auth.currentUser;
+
+
+            // Convert date to string format to use as document ID (e.g. '2023-07-06')
+            const dateString = this.toLocalISOString(selectedDate);
+            console.log(dateString)
+
+            const userPaymentsRef = collection(db, 'Payments', user.email, dateString);
+
+            const userPostsCollectionSnapshot = await getDocs(userPaymentsRef);
+            if (userPostsCollectionSnapshot.empty) {
+                await setDoc(userPaymentsRef.parent, {[userPaymentsRef.id]: {}});
+            }
+
+            await addDoc(userPaymentsRef, {
+                payment: amountPayed,
+                customer: Customer,
+                notes: notes,
+
+            });
+        } catch {
+            toast.error("User must be signed in to create a post.");
         }
-
-        // Convert date to string format to use as document ID (e.g. '2023-07-06')
-        const dateString = this.toLocalISOString(selectedDate);
-        console.log(dateString)
-
-        const userPaymentsRef = collection(db, 'Payments', user.email, dateString);
-
-        const userPostsCollectionSnapshot = await getDocs(userPaymentsRef);
-        if (userPostsCollectionSnapshot.empty) {
-            await setDoc(userPaymentsRef.parent, {[userPaymentsRef.id]: {}});
-        }
-
-        await addDoc(userPaymentsRef, {
-            payment: amountPayed,
-            customer: Customer,
-            notes: notes,
-
-        });
     }
-
 
         async logout() {
         const auth = getAuth();
@@ -154,7 +173,7 @@ class Model {
             this.currentLoggedInUser = undefined;
             console.log(auth.currentUser);
         } catch (error) {
-            console.error(error);
+            toast.error(error)
         }
     }
 }

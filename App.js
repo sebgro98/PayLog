@@ -5,6 +5,8 @@ import Calendar from './Calendar';
 import MonthlyDetails from './MonthlyDetails';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
+import 'react-toastify/dist/ReactToastify.css';
+import { ToastContainer } from 'react-toastify';
 
 const Stack = createStackNavigator();
 
@@ -12,7 +14,9 @@ export default function App() {
     const [currentMonth, setCurrentMonth] = useState(new Date());
 
     return (
+
         <NavigationContainer>
+            <view><ToastContainer/></view>
             <Stack.Navigator initialRouteName="Calendar">
                 <Stack.Screen
                     name="Calendar"

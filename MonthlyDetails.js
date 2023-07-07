@@ -1,15 +1,24 @@
 import React, {useCallback, useEffect, useState} from 'react';
-import {View, Text, Modal, TouchableOpacity, TextInput, Button, StyleSheet} from 'react-native';
+import {
+    View,
+    Text,
+    Modal,
+    TouchableOpacity,
+    TextInput,
+    Button,
+    StyleSheet
+} from 'react-native';
 import Model from "./Model";
 
-const MonthlyDetails = ({ route }) => {
+const MonthlyDetails = ({route}) => {
     const [monthlyData, setMonthlyData] = useState([]);
     const [selectedPayment, setSelectedPayment] = useState(null);
     const [paymentForm, setPaymentForm] = useState({payment: '', notes: '', customer: ''});
     const [modalVisible, setModalVisible] = useState(false);
     const [totalAmount, setTotalAmount] = useState(0);
+    const [totalTaxAmount, setTotalTaxAmount] = useState(0);
 
-    const { currentMonth } = route.params;
+    const {currentMonth} = route.params;
     const model = new Model();
 
     const fetchPayments = useCallback(async () => {
@@ -35,12 +44,43 @@ const MonthlyDetails = ({ route }) => {
         fetchPayments();
     }, []);
 
+    const confirmDeletePayment = () => {
+        if (window.confirm("Are you sure you want to delete this payment?")) {
+            deletePayment();
+        }
+    };
+
+    useEffect(() => {
+        if (totalAmount > 0) {
+            const xAmount = totalAmount * 0.4;
+            const taxAmount = totalAmount - xAmount;
+            console.log("Total tax amount:", taxAmount);
+            setTotalTaxAmount(taxAmount);
+        }
+        else {
+            setTotalTaxAmount(totalAmount)
+        }
+    }, [totalAmount]);
+
+    const deletePayment = async () => {
+        try {
+            await model.deletePayment(selectedPayment);
+            setSelectedPayment(null);
+            setModalVisible(!modalVisible);
+            fetchPayments(); // Refetch payments to show updated data
+        } catch (error) {
+            console.error("Error deleting payment:", error);
+        }
+    };
+
+
     const updatePayment = async () => {
         console.log("Date__", selectedPayment)
-        console.log("paymentFa",paymentForm)
+        console.log("paymentFa", paymentForm)
         try {
             await model.updatePayment(selectedPayment, paymentForm);
             setSelectedPayment(null);
+            setModalVisible(!modalVisible);
             fetchPayments();
         } catch (error) {
             console.error("Error updating payment:", error);
@@ -50,8 +90,10 @@ const MonthlyDetails = ({ route }) => {
     // Render
     return (
         <View style={styles.container}>
-            <Text>Total Amount: {totalAmount}</Text>
-            <Text style={styles.header}>Monthly Detail for {`${currentMonth.toLocaleString('default', {month: 'long'})} ${currentMonth.getFullYear()}`}</Text>
+            <Text style={styles.amount}>Total Amount: {totalAmount}</Text>
+            <Text style={styles.amount}>Amount after taxes: {totalTaxAmount}</Text>
+            <Text style={styles.header}>Monthly Detail
+                for {`${currentMonth.toLocaleString('default', {month: 'long'})} ${currentMonth.getFullYear()}`}</Text>
             {
                 monthlyData.map((data, index) => (
                     <TouchableOpacity style={styles.paymentCard} key={index} onPress={() => {
@@ -87,7 +129,10 @@ const MonthlyDetails = ({ route }) => {
                             placeholder="Customer"
                             style={styles.modalInput}
                             value={paymentForm.customer} // Corrected value
-                            onChangeText={(text) => setPaymentForm({...paymentForm, customer: text})} // Corrected handler
+                            onChangeText={(text) => setPaymentForm({
+                                ...paymentForm,
+                                customer: text
+                            })}
                         />
 
                         <TextInput
@@ -96,12 +141,20 @@ const MonthlyDetails = ({ route }) => {
                             value={paymentForm.notes} // Corrected value
                             onChangeText={(text) => setPaymentForm({...paymentForm, notes: text})} // Corrected handler
                         />
-
-                        <Button title="Save Changes" onPress={updatePayment}/>
-                        <Button title="Close" onPress={() => {
-                            setModalVisible(!modalVisible);
-                            setPaymentForm({payment: '', notes: '', customer: ''});
-                        }}/>
+                        <View style={styles.buttonContainer}>
+                            <View style={styles.button}>
+                                <Button title="Save Changes" onPress={updatePayment}/>
+                            </View>
+                            <View style={styles.button}>
+                                <Button title="Delete" onPress={confirmDeletePayment}/>
+                            </View>
+                            <View style={styles.button}>
+                                <Button title="Close" onPress={() => {
+                                    setModalVisible(!modalVisible);
+                                    setPaymentForm({payment: '', notes: '', customer: ''});
+                                }}/>
+                            </View>
+                        </View>
                     </View>
                 </View>
             </Modal>
@@ -172,6 +225,16 @@ const styles = StyleSheet.create({
         borderColor: 'gray',
         borderWidth: 1,
         borderRadius: 5,
+    },
+    buttonContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between'
+    },
+    button: {
+        margin: 5,
+    },
+    amount: {
+        fontSize: 18,
     }
 });
 

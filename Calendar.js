@@ -1,6 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import {View, Text, StyleSheet, TouchableOpacity, TextInput, Button, Modal} from 'react-native';
 import Model from "./Model.js"
+import {toast} from "react-toastify";
 
 const CalendarComponent = (  {navigation }) => {
     const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -49,9 +50,11 @@ const CalendarComponent = (  {navigation }) => {
     const handleLogin = async () => {
         try {
             await model.logIn(email, password);
+            if (email && password) {
             setLoggedIn(true);
+            }
         } catch (error) {
-            console.error(error);
+            toast.error(error)
 
         }
     };
@@ -61,7 +64,7 @@ const CalendarComponent = (  {navigation }) => {
             await model.logout();
             setLoggedIn(false);
         } catch (error) {
-            console.error(error);
+            toast.error(error)
 
         }
     };
@@ -196,6 +199,7 @@ const CalendarComponent = (  {navigation }) => {
                                 onChangeText={setNotes}
                                 style={styles.textInput}
                             />
+                            <View style={styles.buttonContainer}>
                             <Button
                                 mode="contained"
                                 onPress={async () => {
@@ -220,6 +224,7 @@ const CalendarComponent = (  {navigation }) => {
                                 title={'Close'}>
 
                             </Button>
+                                </View>
                         </View>
                     </View>
                 </Modal>
