@@ -1,2 +1,2 @@
 # PayLog
- PaymentLogger
+An app where you can log your payments
