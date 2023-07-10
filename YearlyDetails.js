@@ -40,7 +40,7 @@ const YearlyDetails = ({route}) => {
 
             let totalExpenses = 0;
             amount.forEach(payment => {
-                console.log("Payment:", payment.expenses);
+                console.log("totalExpenses:", payment.expenses);
                 totalVat += Number(payment.expenses);
             });
             setExpenses(totalExpenses);
@@ -100,18 +100,18 @@ const YearlyDetails = ({route}) => {
         else if (surplusCapital >= 167001 && surplusCapital <= 189600) {
             basicDeduction = 37800;
         }
-        let employmentTaxCredit = surplusCapital * 0.095
+        let employmentTaxCredit = (surplusCapital - basicDeduction) * 0.095
         console.log("surplusCapital", surplusCapital - basicDeduction)
         console.log("employmentTaxCredit", employmentTaxCredit)
         // Beräkna skatt och egenavgifter baserat på grundavdrag
         let tax = (surplusCapital - basicDeduction) * 0.29855;
-        let socialSecurityFee = (surplusCapital - basicDeduction) * 0.2987;
+        let socialSecurityFee = surplusCapital * 0.2987;
 
         // Avdrag på egenavgifter om överskottskapital är över 40000
-        /*if (surplusCapital > 40000) {
+        if (surplusCapital > 40000) {
             let socialSecurityReduction = (surplusCapital) * 0.0075;
             socialSecurityFee -= Math.min(socialSecurityReduction, 15000);
-        }*/
+        }
 
 
 
@@ -133,8 +133,8 @@ const YearlyDetails = ({route}) => {
 
     return (
         <div>
-            <p> Total income incl. sales tax {totalIncome.toFixed(1)}</p>
-            <p>Total income excl. sales tax: {payVat.toFixed(1)}</p>
+            <p> Total income incl. sales tax {Math.round(totalIncome)}</p>
+            <p>Total income excl. sales tax: {Math.round(payVat)}</p>
             <p>Taxes to be paid: {Math.round(taxes)}</p>
             <p>Total income after taxes: {Math.round(afterTaxIncome)}</p>
             <p>Total Vat: {Math.round(vatTotal)}</p>

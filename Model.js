@@ -265,7 +265,7 @@ class Model {
             let vat = 0;
             let expenses = 0;
             if (payment < 0) {
-                vat = payment * 0.25 * -1; // Calculate negative VAT when payment is negative
+                vat = payment * 0.25;
                 expenses = payment;
             } else {
                 vat = payment * 0.25; // Calculate positive VAT when payment is positive
