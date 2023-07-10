@@ -17,22 +17,31 @@ const MonthlyDetails = ({route}) => {
     const [modalVisible, setModalVisible] = useState(false);
     const [totalAmount, setTotalAmount] = useState(0);
     const [totalTaxAmount, setTotalTaxAmount] = useState(0);
+    const [vatTotal, setVatTotal] = useState(0);
 
     const {currentMonth} = route.params;
+    console.log("Current month", currentMonth)
     const model = new Model();
 
     const fetchPayments = useCallback(async () => {
         console.log("Fetching payments...");
         try {
-            const allPayments = await model.getAllPayments(currentMonth);
+            const allPayments = await model.getPayments(currentMonth);
             console.log("Fetched payments successfully:", allPayments);
 
             let total = 0;
             allPayments.forEach(payment => {
-                console.log("Payment:", payment.payment);
-                total += Number(payment.payment);
+                console.log("Payment:", payment.paymentVat);
+                total += Number(payment.paymentVat);
             });
             setTotalAmount(total);
+
+            let totalVat = 0;
+            allPayments.forEach(payment => {
+                console.log("vat:", payment.vat);
+                totalVat += Number(payment.vat);
+            });
+            setVatTotal(totalVat);
 
             setMonthlyData(allPayments);
         } catch (error) {
@@ -52,7 +61,7 @@ const MonthlyDetails = ({route}) => {
 
     useEffect(() => {
         if (totalAmount > 0) {
-            const xAmount = totalAmount * 0.4;
+            const xAmount = totalAmount * 0.37;
             const taxAmount = totalAmount - xAmount;
             console.log("Total tax amount:", taxAmount);
             setTotalTaxAmount(taxAmount);
@@ -78,7 +87,7 @@ const MonthlyDetails = ({route}) => {
         console.log("Date__", selectedPayment)
         console.log("paymentFa", paymentForm)
         try {
-            await model.updatePayment(selectedPayment, paymentForm);
+            await model.updatePayment1(selectedPayment, paymentForm);
             setSelectedPayment(null);
             setModalVisible(!modalVisible);
             fetchPayments();
@@ -90,8 +99,9 @@ const MonthlyDetails = ({route}) => {
     // Render
     return (
         <View style={styles.container}>
-            <Text style={styles.amount}>Total Amount: {totalAmount}</Text>
-            <Text style={styles.amount}>Amount after taxes: {totalTaxAmount}</Text>
+            <Text style={styles.amount}>Total income incl. sales tax: {Math.round(totalAmount)}</Text>
+            <Text style={styles.amount}>Approx amount after taxes: {Math.round(totalTaxAmount)}</Text>
+            <Text style={styles.amount}>Total Vat: {Math.round(vatTotal)}</Text>
             <Text style={styles.header}>Monthly Detail
                 for {`${currentMonth.toLocaleString('default', {month: 'long'})} ${currentMonth.getFullYear()}`}</Text>
             {
@@ -99,7 +109,10 @@ const MonthlyDetails = ({route}) => {
                     <TouchableOpacity style={styles.paymentCard} key={index} onPress={() => {
                         setSelectedPayment(data);
                         setModalVisible(true);
-                    }}>
+                    }}
+                      paymentId={data.paymentId} // Include the paymentId prop
+                    >
+
                         <Text style={styles.paymentText}>Date: {new Date(data.date).toLocaleDateString()}</Text>
                         <Text style={styles.paymentText}>Payment: {data.payment}</Text>
                         <Text style={styles.paymentText}>Customer: {data.customer}</Text>
@@ -143,7 +156,14 @@ const MonthlyDetails = ({route}) => {
                         />
                         <View style={styles.buttonContainer}>
                             <View style={styles.button}>
-                                <Button title="Save Changes" onPress={updatePayment}/>
+                                <Button
+                                    title="Save Changes"
+                                    onPress={() => {
+                                        updatePayment();
+                                        setPaymentForm({ payment: '', notes: '', customer: '' });
+                                        setModalVisible(!modalVisible);
+                                    }}
+                                />
                             </View>
                             <View style={styles.button}>
                                 <Button title="Delete" onPress={confirmDeletePayment}/>

@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { StyleSheet } from 'react-native';
 import Calendar from './Calendar';
 import MonthlyDetails from './MonthlyDetails';
+import YearlyDetails from "./YearlyDetails";
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import 'react-toastify/dist/ReactToastify.css';
@@ -26,6 +27,10 @@ export default function App() {
                 <Stack.Screen
                     name="MonthlyDetails"
                     component={MonthlyDetails}
+                />
+                <Stack.Screen
+                    name="YearlyDetails"
+                    component={YearlyDetails}
                 />
             </Stack.Navigator>
             <StatusBar style="auto" />

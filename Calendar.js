@@ -87,9 +87,12 @@ const CalendarComponent = (  {navigation }) => {
     const navigateToMonthlyDetails = () => {
         navigation.navigate('MonthlyDetails', { currentMonth });
     };
+    const navigateToYearlyDetails = () => {
+        navigation.navigate('YearlyDetails', { currentMonth });
+    };
 
     const renderGrid = () => {
-        const DAYS_OF_WEEK = ["Mon", "Tues", "Wedne", "Thurs", "Fri", "Satur", "Sun"];
+        const DAYS_OF_WEEK = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
         const currentDate = new Date(); // Get the current date
 
         return DAYS_OF_WEEK.map((day, index) => (
@@ -132,12 +135,16 @@ const CalendarComponent = (  {navigation }) => {
                 <TouchableOpacity onPress={() => navigateMonth(1)}>
                     <Text style={styles.arrowText}>{'>'}</Text>
                 </TouchableOpacity>
-                <Button title="Go to Monthly Details" onPress={navigateToMonthlyDetails} />
+
+                <Button title="Monthly-Details" onPress={navigateToMonthlyDetails} />
             </View>
 
             {isLoading ? <Text>Loading...</Text> : <View style={styles.gridContainer}>{renderGrid()}</View>}
 
             <View style={styles.container_button}>
+                <View style={styles.buttonSpacing}>
+                    <Button title="Yearly-Details" onPress={navigateToYearlyDetails} />
+                </View>
                 {!loggedIn ? (
                     <View style={styles.formContainer}>
                         <TextInput
@@ -205,7 +212,7 @@ const CalendarComponent = (  {navigation }) => {
                                 onPress={async () => {
                                     setIsPopupVisible(false);
                                     const model = new Model();
-                                    await model.addPayments(selectedDate, payment, customer, notes);
+                                    await model.addPayment(selectedDate, payment, customer, notes);
                                     setPayment('');
                                     setCustomer('');
                                     setNotes('');
@@ -413,7 +420,7 @@ const styles = StyleSheet.create({
     },
     buttonContainer: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
+        justifyContent: 'space-evenly',
         width: '100%',
         marginTop: 20,
     },
@@ -423,6 +430,11 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-start',
         padding: 20,
     },
+
+    buttonSpacing: {
+        marginBottom: 20, // Adjust the top margin as needed
+    },
+
 });
 
 

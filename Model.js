@@ -1,7 +1,8 @@
 import {  onAuthStateChanged ,createUserWithEmailAndPassword, getAuth, signInWithEmailAndPassword, setPersistence, browserLocalPersistence } from "firebase/auth";
 import { db } from "./firebaseModel";
-import { collection, doc, getDocs, setDoc, addDoc,query, updateDoc, deleteDoc} from "firebase/firestore";
+import { collection, doc, getDocs, setDoc, addDoc, updateDoc, deleteDoc,query, where} from "firebase/firestore";
 import { toast } from 'react-toastify';
+
 class Model {
     constructor() {
         this.currentUserUID = null;
@@ -25,12 +26,29 @@ class Model {
         }
     }
 
+    async updatePayment1(payment, updatedData) {
+        try {
+            const dateString = payment.date.toString();
+            const [year, month] = dateString.split('-');
 
-    async  updatePayment(date, updatedData) {
+            console.log("yearMonth", `${year}_${month}`);
+            console.log("payment.id",payment.id)
+
+            const paymentRef = doc(db, 'Payments2',`${year}_${month}`, 'days', payment.id);
+            await updateDoc(paymentRef, updatedData);
+            toast(`Successfully updated payment for date: ${dateString}`);
+        } catch (error) {
+            console.error('Error updating payment:', error);
+        }
+    }
+
+
+    /*async  updatePayment(date, updatedData) {
 
         try {
             const auth = getAuth();
             const user = auth.currentUser;
+            console.log("date", date)
             const paymentDocRef = doc(db, 'Payments', user.email, date.date, date.id);
             await updateDoc(paymentDocRef, updatedData);
             toast(`Successfully updated payment for date: ${date}`);
@@ -38,9 +56,9 @@ class Model {
             console.error(`Error updating payment for date: ${date}`, error);
             throw error;
         }
-    }
+    }*/
 
-    async  getAllPayments(yearMonth) {
+    /*async  getAllPayments(yearMonth) {
         const auth = getAuth();
         const user = auth.currentUser;
         console.log("wtf",yearMonth)
@@ -75,7 +93,81 @@ class Model {
             toast.error('No user found');
             return [];
         }
+    }*/
+
+    async getPayments(selectedDate) {
+        try {
+            const auth = getAuth();
+            const user = auth.currentUser;
+            console.log("selected", selectedDate);
+            const dateString = this.toLocalISOString(selectedDate);
+            const [year, month] = dateString.split('-');
+
+            console.log("month", month);
+            const paymentsRef = collection(db, 'Payments2');
+            const monthDocRef = doc(paymentsRef, `${year}_${month}`);
+            const dayCollectionRef = collection(monthDocRef, 'days');
+
+            // Add a filter to only retrieve payments for the current user's email
+            const querySnapshot = await getDocs(
+                query(dayCollectionRef, where('user_email', '==', user.email))
+            );
+
+            const payments = [];
+            querySnapshot.forEach((doc) => {
+                payments.push({ id: doc.id, ...doc.data() });
+            });
+
+            console.log('Before sorting:', payments);
+
+            // Sort the payments array by the 'day' field in ascending order
+            payments.sort((a, b) => a.date.localeCompare(b.date));
+
+            console.log('After sorting:', payments);
+
+            return payments;
+        } catch (error) {
+            console.error('Error getting payments:', error);
+            return [];
+        }
     }
+
+
+
+    async getPaymentsYear(selectedDate) {
+        try {
+            const auth = getAuth();
+            const user = auth.currentUser;
+
+            const dateString = this.toLocalISOString(selectedDate);
+            const [year] = dateString.split('-');
+            console.log("selectedDate", selectedDate);
+            console.log("dateString", dateString);
+            const paymentsRef = collection(db, 'Payments2');
+
+            const yearPayments = [];
+
+            for (let month = 1; month <= 12; month++) {
+                const monthString = String(month).padStart(2, '0');
+                const monthDocRef = doc(paymentsRef, `${year}_${monthString}`);
+                const dayCollectionRef = collection(monthDocRef, 'days');
+
+                const querySnapshot = await getDocs(
+                    query(dayCollectionRef, where('user_email', '==', user.email)) // Add query filter for user email
+                );
+
+                querySnapshot.forEach((doc) => {
+                    yearPayments.push(doc.data());
+                });
+            }
+
+            return yearPayments;
+        } catch (error) {
+            console.error('Error getting payments:', error);
+            return [];
+        }
+    }
+
 
 
     async getUser() {
@@ -118,11 +210,12 @@ class Model {
     }
 
     async deletePayment(payment) {
-        const auth = getAuth();
-        const user = auth.currentUser;
+
+        const dateString = payment.date.toString();
+        const [year, month] = dateString.split('-');
 
         try {
-            const docRef = doc(db, 'Payments', user.email, payment.date, payment.id);
+            const docRef = doc(db, 'Payments', `${year}_${month}`, 'days', payment.id);
             await deleteDoc(docRef);
             console.log(`Deleted payment ${payment.id}`);
         } catch (error) {
@@ -136,7 +229,7 @@ class Model {
         return adjustedDate.toISOString().split('T')[0];
     }
 
-    async  addPayments(selectedDate, amountPayed, Customer, notes) {
+    async  addPayments(selectedDate, amountPayed, customer, notes) {
         try {
             const auth = getAuth();
             const user = auth.currentUser;
@@ -144,7 +237,7 @@ class Model {
 
             // Convert date to string format to use as document ID (e.g. '2023-07-06')
             const dateString = this.toLocalISOString(selectedDate);
-            console.log(dateString)
+            console.log("This is date",dateString)
 
             const userPaymentsRef = collection(db, 'Payments', user.email, dateString);
 
@@ -155,7 +248,7 @@ class Model {
 
             await addDoc(userPaymentsRef, {
                 payment: amountPayed,
-                customer: Customer,
+                customer: customer,
                 notes: notes,
 
             });
@@ -164,7 +257,57 @@ class Model {
         }
     }
 
-        async logout() {
+    async addPayment(selectedDate, payment, customer, notes) {
+        try {
+            const date = this.toLocalISOString(selectedDate);
+            const year = selectedDate.getUTCFullYear();
+            const month = String(selectedDate.getUTCMonth() + 1).padStart(2, '0');
+            let vat = 0;
+            let expenses = 0;
+            if (payment < 0) {
+                vat = payment * 0.25 * -1; // Calculate negative VAT when payment is negative
+                expenses = payment;
+            } else {
+                vat = payment * 0.25; // Calculate positive VAT when payment is positive
+            }
+            let paymentVat = (payment - vat);
+
+
+            const auth = getAuth();
+            const user = auth.currentUser;
+
+            const paymentData = {
+                user_email: user.email,
+                payment,
+                customer,
+                notes,
+                date,
+                paymentVat,
+                vat,
+                expenses,
+            };
+
+            const paymentsRef = collection(db, 'Payments2');
+            const monthDocRef = doc(paymentsRef, `${year}_${month}`);
+            const dayCollectionRef = collection(monthDocRef, 'days');
+
+            const userPostsCollectionSnapshot = await getDocs(dayCollectionRef);
+            if (userPostsCollectionSnapshot.empty) {
+                await setDoc(dayCollectionRef.parent, {[dayCollectionRef.id]: {}});
+            }
+
+            await addDoc(dayCollectionRef, paymentData);
+
+            toast('Payment added successfully!');
+        } catch (error) {
+            toast.error('Error adding payment:', error);
+        }
+    }
+
+
+
+
+    async logout() {
         const auth = getAuth();
         try {
             console.log(this.currentLoggedInUser);
