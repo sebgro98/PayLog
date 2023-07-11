@@ -76,7 +76,7 @@ const MonthlyDetails = ({route}) => {
             await model.deletePayment(selectedPayment);
             setSelectedPayment(null);
             setModalVisible(!modalVisible);
-            fetchPayments(); // Refetch payments to show updated data
+            fetchPayments();
         } catch (error) {
             console.error("Error deleting payment:", error);
         }
@@ -99,9 +99,9 @@ const MonthlyDetails = ({route}) => {
     // Render
     return (
         <View style={styles.container}>
-            <Text style={styles.amount}>Total income incl. sales tax: {Math.round(totalAmount)}</Text>
-            <Text style={styles.amount}>Approx amount after taxes: {Math.round(totalTaxAmount)}</Text>
-            <Text style={styles.amount}>Total Vat: {Math.round(vatTotal)}</Text>
+            <Text style={styles.amount}>Total income incl. sales tax: {Math.round(totalAmount)}kr</Text>
+            <Text style={styles.amount}>Approx amount after taxes: {Math.round(totalTaxAmount)}kr</Text>
+            <Text style={styles.amount}>Total Vat: {Math.round(vatTotal)}kr</Text>
             <Text style={styles.header}>Monthly Detail
                 for {`${currentMonth.toLocaleString('default', {month: 'long'})} ${currentMonth.getFullYear()}`}</Text>
             {
@@ -110,11 +110,11 @@ const MonthlyDetails = ({route}) => {
                         setSelectedPayment(data);
                         setModalVisible(true);
                     }}
-                      paymentId={data.paymentId} // Include the paymentId prop
+                      paymentId={data.paymentId}
                     >
 
                         <Text style={styles.paymentText}>Date: {new Date(data.date).toLocaleDateString()}</Text>
-                        <Text style={styles.paymentText}>Payment: {data.payment}</Text>
+                        <Text style={styles.paymentText}>Payment: {data.payment}kr</Text>
                         <Text style={styles.paymentText}>Customer: {data.customer}</Text>
                         <Text style={styles.paymentText}>Notes: {data.notes}</Text>
                     </TouchableOpacity>

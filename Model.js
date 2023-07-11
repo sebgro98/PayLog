@@ -21,7 +21,7 @@ class Model {
                 password: password,
             });
         } catch (error) {
-            toast.error(error.message)
+            console.log(error)
             throw error;
         }
     }
@@ -32,15 +32,39 @@ class Model {
             const [year, month] = dateString.split('-');
 
             console.log("yearMonth", `${year}_${month}`);
-            console.log("payment.id",payment.id)
+            console.log("payment.id", updatedData);
 
-            const paymentRef = doc(db, 'Payments2',`${year}_${month}`, 'days', payment.id);
+            // Check if updatedData.payment is less than 0
+            if (updatedData.payment < 0) {
+                updatedData.expenses = Math.abs(updatedData.payment);
+                updatedData.vat = updatedData.payment * 0.25;
+            } else {
+                updatedData.expenses = 0;
+                updatedData.vat = updatedData.payment * 0.25;
+            }
+
+            updatedData.paymentVat = updatedData.payment - updatedData.vat;
+            if(updatedData.paymentVat < 0) {
+                updatedData.expenses = Math.abs(updatedData.paymentVat);
+            }
+
+
+            // Remove customer and notes from updatedData if they are empty
+            if (updatedData.customer === '') {
+                delete updatedData.customer;
+            }
+            if (updatedData.notes === '') {
+                delete updatedData.notes;
+            }
+
+            const paymentRef = doc(db, 'Payments2', `${year}_${month}`, 'days', payment.id);
             await updateDoc(paymentRef, updatedData);
             toast(`Successfully updated payment for date: ${dateString}`);
         } catch (error) {
             console.error('Error updating payment:', error);
         }
     }
+
 
 
     /*async  updatePayment(date, updatedData) {
@@ -192,20 +216,8 @@ class Model {
             console.log(this.currentLoggedInUser);
             return email;
         } catch (error) {
-            switch (error.code) {
-                case "auth/invalid-email":
-                    toast.error("Invalid email!")
-                    throw(error)
-                case "auth/user-not-found":
-                    toast.error("Account does not exist!")
-                    throw(error)
-                case "auth/wrong-password":
-                    toast.error("Invalid password!")
-                    throw(error)
-                default:
-                    toast.error("Email or password invalid!")
-                    throw(error)
-            }
+            console.error(error)
+            throw error
         }
     }
 
@@ -215,9 +227,9 @@ class Model {
         const [year, month] = dateString.split('-');
 
         try {
-            const docRef = doc(db, 'Payments', `${year}_${month}`, 'days', payment.id);
+            const docRef = doc(db, 'Payments2', `${year}_${month}`, 'days', payment.id);
             await deleteDoc(docRef);
-            console.log(`Deleted payment ${payment.id}`);
+            toast(`Deleted payment ${payment.date}`);
         } catch (error) {
             toast.error(error)
         }
@@ -260,18 +272,22 @@ class Model {
     async addPayment(selectedDate, payment, customer, notes) {
         try {
             const date = this.toLocalISOString(selectedDate);
-            const year = selectedDate.getUTCFullYear();
-            const month = String(selectedDate.getUTCMonth() + 1).padStart(2, '0');
+            const year = selectedDate.getFullYear();
+            const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+            console.log("`${year}_${month}`", `${year}_${month}`)
             let vat = 0;
             let expenses = 0;
             if (payment < 0) {
                 vat = payment * 0.25;
-                expenses = payment;
+                expenses = payment.paymentVat;
             } else {
                 vat = payment * 0.25; // Calculate positive VAT when payment is positive
             }
             let paymentVat = (payment - vat);
 
+            if (paymentVat < 0) {
+                expenses = Math.abs(paymentVat);
+            }
 
             const auth = getAuth();
             const user = auth.currentUser;
@@ -316,7 +332,7 @@ class Model {
             this.currentLoggedInUser = undefined;
             console.log(auth.currentUser);
         } catch (error) {
-            toast.error(error)
+            console.error(error)
         }
     }
 }

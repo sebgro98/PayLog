@@ -47,15 +47,32 @@ const CalendarComponent = (  {navigation }) => {
 
         fetchUserLoginState()
     }, []);
+
     const handleLogin = async () => {
         try {
             await model.logIn(email, password);
-            if (email && password) {
             setLoggedIn(true);
-            }
         } catch (error) {
-            toast.error(error)
-
+            switch (error.code) {
+                case "auth/invalid-email":
+                    toast.error("Invalid email address");
+                    break;
+                case "auth/user-disabled":
+                    toast.error("User account is disabled");
+                    break;
+                case "auth/user-not-found":
+                    toast.error("User not found");
+                    break;
+                case "auth/wrong-password":
+                    toast.error("Invalid password");
+                    break;
+                case "auth/missing-password":
+                    toast.error("missing password")
+                    break;
+                default:
+                    console.error(error);
+                    break;
+            }
         }
     };
 
@@ -63,8 +80,9 @@ const CalendarComponent = (  {navigation }) => {
         try {
             await model.logout();
             setLoggedIn(false);
+            setRegistrationSuccessful(false);
         } catch (error) {
-            toast.error(error)
+            console.error(error)
 
         }
     };
@@ -72,10 +90,28 @@ const CalendarComponent = (  {navigation }) => {
     const handleRegistration = async () => {
         try {
             await model.Registration(email, password);
+            await model.logIn(email, password);
             setRegistrationSuccessful(true);
+            setLoggedIn(true); // Set the logged-in state to true
         } catch (error) {
-            console.error(error);
-            // here you could show an error message to the user
+            switch (error.code) {
+                case "auth/invalid-email":
+                    toast.error("Invalid email address");
+                    break;
+                case "auth/missing-email":
+                    toast.error("Email address is required");
+                    break;
+                case "auth/weak-password":
+                    toast.error("Password should be at least 6 characters long");
+                    break;
+                case "auth/missing-password":
+                    toast.error("missing-password");
+                    break;
+
+                default:
+                    console.error(error);
+                    break;
+            }
         }
     };
 
@@ -106,7 +142,7 @@ const CalendarComponent = (  {navigation }) => {
                         dateInfo.date.getFullYear() === currentDate.getFullYear();
 
                     return (
-                        <TouchableOpacity style={styles.gridCell} key={dateInfo.date}
+                        <TouchableOpacity style={[styles.gridCell, { width: 57, height: 57 }]} key={dateInfo.date}
                                           onPress={() => handleDatePress(dateInfo)}>
                             <Text
                                 style={dateInfo.isCurrentMonth ?
